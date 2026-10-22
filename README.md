@@ -132,8 +132,8 @@ flowchart TD
 
 ### 1. Clone and create virtual environment
 ```bash
-git clone https://github.com/Yhoanes/Ferr7h.git
-cd Ferr7h
+git clone https://github.com/Yhoanes/ferreteria-7-hermanos.git
+cd ferreteria-7-hermanos
 python -m venv venv
 # Windows
 venv\Scripts\activate
