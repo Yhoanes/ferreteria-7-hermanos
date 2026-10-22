@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-3 rounded-top-4">
+            <div>
+                <h4 class="mb-0">
+                    <i class="bi bi-journal-text me-2"></i>
+                    Historial de Ventas
+                </h4>
+                <small class="text-white-50">Consulta de ventas registradas, recibos y detalles</small>
+            </div>
+
+            {% if 'add_venta' in perms_ferreteria or request.user.is_superuser %}
+                <a href="{% url 'nueva_venta' %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Nueva Venta
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="card-body p-4">
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white text-muted border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="buscadorTabla" class="form-control border-start-0" placeholder="Buscar folio, cliente, vendedor o fecha...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tablaVentas">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 90px;">Folio</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Vendedor</th>
+                            <th class="text-center">Productos</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-center" style="width: 190px;">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for v in ventas %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-dark px-3 py-2">#{{ v.id }}</span>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold">{{ v.fecha|date:"d/m/Y" }}</div>
+                                    <small class="text-muted">{{ v.fecha|date:"H:i" }}</small>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ v.cliente.nombre }}</div>
+                                            <small class="text-muted">{{ v.cliente.documento_identidad }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <i class="bi bi-person-badge text-muted me-1"></i>
+                                    {% if v.usuario %}
+                                        {{ v.usuario.nombre }}
+                                    {% else %}
+                                        <span class="text-muted">Sin vendedor</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border px-3 py-2">
+                                        {{ v.detalles.all|length }}
+                                    </span>
+                                </td>
+
+                                <td class="text-end">
+                                    <span class="fw-bold text-success fs-6">
+                                        Bs. {{ v.total }}
+                                    </span>
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        {% if 'view_venta' in perms_ferreteria or request.user.is_superuser %}
+                                            <a href="{% url 'detalle_venta' v.id %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+
+                                            <a href="{% url 'generar_recibo_pdf' v.id %}" target="_blank" class="btn btn-sm btn-outline-danger" title="Descargar o imprimir recibo PDF">
+                                                <i class="bi bi-file-earmark-pdf-fill"></i>
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-file-earmark-pdf-fill"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <i class="bi bi-receipt fs-1 d-block mb-2"></i>
+                                    No se han registrado ventas aún.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-light border mt-4 mb-0">
+                <div class="d-flex gap-2">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <div>
+                        Desde esta pantalla puedes revisar el detalle de cada venta y generar el recibo en PDF.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buscador = document.getElementById("buscadorTabla");
+    const filas = document.querySelectorAll("#tablaVentas tbody tr");
+
+    if (buscador) {
+        buscador.addEventListener("input", function () {
+            const texto = this.value.toLowerCase().trim();
+
+            filas.forEach(function (fila) {
+                const contenido = fila.innerText.toLowerCase();
+                fila.style.display = contenido.includes(texto) ? "" : "none";
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

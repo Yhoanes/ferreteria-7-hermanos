@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-primary text-white py-3 rounded-top-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div>
+                            <h4 class="mb-0">
+                                <i class="bi bi-shield-lock me-2"></i>
+                                {{ accion }} Rol de Acceso
+                            </h4>
+                            <small class="text-white-50">Agrupa permisos por módulo para controlar el acceso del sistema</small>
+                        </div>
+
+                        <a href="{% url 'lista_roles' %}" class="btn btn-light btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Volver
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-lg-7">
+                                <label class="form-label fw-bold">Nombre del Rol</label>
+                                <input type="text" name="nombre" class="form-control form-control-lg" placeholder="Escribe el nombre del rol..." value="{{ rol.name|default:'' }}" required minlength="3">
+                                <div class="form-text">Ejemplo: Administrador, Cajero, Encargado de Inventario o Supervisor.</div>
+                            </div>
+
+                            <div class="col-12 col-lg-5">
+                                <label class="form-label fw-bold">Acciones rápidas</label>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-primary flex-fill" id="btnMarcarTodos">
+                                        <i class="bi bi-check2-all me-1"></i>
+                                        Marcar todos
+                                    </button>
+
+                                    <button type="button" class="btn btn-outline-secondary flex-fill" id="btnDesmarcarTodos">
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        Desmarcar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                            <div>
+                                <h5 class="mb-0">Permisos del Rol</h5>
+                                <small class="text-muted">Selecciona los permisos según la función del empleado.</small>
+                            </div>
+
+                            <div class="input-group shadow-sm" style="max-width: 360px;">
+                                <span class="input-group-text bg-white text-muted border-end-0">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" id="buscadorPermisos" class="form-control border-start-0" placeholder="Buscar permiso...">
+                            </div>
+                        </div>
+
+                        <div class="accordion" id="accordionPermisos">
+                            {% for modulo, permisos in permisos_agrupados.items %}
+                                <div class="accordion-item border-0 shadow-sm rounded-4 mb-3 modulo-permisos">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button rounded-4 {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#modulo_{{ forloop.counter }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="modulo_{{ forloop.counter }}">
+                                            <div class="d-flex align-items-center justify-content-between w-100 pe-3">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                                                        <i class="bi bi-folder2-open"></i>
+                                                    </span>
+                                                    <div>
+                                                        <strong>{{ modulo }}</strong>
+                                                        <div class="small text-muted">{{ permisos|length }} permisos disponibles</div>
+                                                    </div>
+                                                </div>
+
+                                                <span class="badge bg-light text-dark border contador-modulo" data-total="{{ permisos|length }}">
+                                                    0 / {{ permisos|length }}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    </h2>
+
+                                    <div id="modulo_{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#accordionPermisos">
+                                        <div class="accordion-body bg-light rounded-bottom-4">
+                                            <div class="d-flex justify-content-end mb-3">
+                                                <button type="button" class="btn btn-sm btn-outline-primary btn-marcar-modulo">
+                                                    <i class="bi bi-check2-square me-1"></i>
+                                                    Marcar módulo
+                                                </button>
+                                            </div>
+
+                                            <div class="row g-2">
+                                                {% for p in permisos %}
+                                                    <div class="col-12 col-md-6 col-lg-4 permiso-item">
+                                                        <label class="permiso-card w-100">
+                                                            <input class="form-check-input permiso-checkbox me-2" type="checkbox" name="permisos" value="{{ p.id }}" id="permiso_{{ p.id }}" {% if accion == 'Editar' and p in rol.permissions.all %}checked{% endif %}>
+
+                                                            <span>
+                                                                <span class="fw-semibold permiso-texto">
+                                                                    {% if p.codename|slice:":4" == "add_" %}
+                                                                        Crear
+                                                                    {% elif p.codename|slice:":7" == "change_" %}
+                                                                        Editar
+                                                                    {% elif p.codename|slice:":7" == "delete_" %}
+                                                                        Eliminar
+                                                                    {% elif p.codename|slice:":5" == "view_" %}
+                                                                        Ver
+                                                                    {% else %}
+                                                                        Gestionar
+                                                                    {% endif %}
+
+                                                                    {% if p.content_type.model == "usuario" %}
+                                                                        usuario
+                                                                    {% elif p.content_type.model == "group" %}
+                                                                        rol
+                                                                    {% elif p.content_type.model == "permission" %}
+                                                                        permiso
+                                                                    {% elif p.content_type.model == "empresaconfig" %}
+                                                                        configuración de la empresa
+                                                                    {% elif p.content_type.model == "producto" %}
+                                                                        producto
+                                                                    {% elif p.content_type.model == "categoria" %}
+                                                                        categoría
+                                                                    {% elif p.content_type.model == "marca" %}
+                                                                        marca
+                                                                    {% elif p.content_type.model == "proveedor" %}
+                                                                        proveedor
+                                                                    {% elif p.content_type.model == "venta" %}
+                                                                        venta
+                                                                    {% elif p.content_type.model == "detalleventa" %}
+                                                                        detalle de venta
+                                                                    {% elif p.content_type.model == "pago" %}
+                                                                        pago
+                                                                    {% elif p.content_type.model == "cliente" %}
+                                                                        cliente
+                                                                    {% elif p.content_type.model == "tipopago" %}
+                                                                        método de pago
+                                                                    {% elif p.content_type.model == "descuento" %}
+                                                                        descuento
+                                                                    {% elif p.content_type.model == "entradastock" %}
+                                                                        entrada de stock
+                                                                    {% elif p.content_type.model == "detalleentrada" %}
+                                                                        detalle de entrada
+                                                                    {% elif p.content_type.model == "salidastock" %}
+                                                                        salida de stock
+                                                                    {% elif p.content_type.model == "detallesalida" %}
+                                                                        detalle de salida
+                                                                    {% else %}
+                                                                        {{ p.content_type.model }}
+                                                                    {% endif %}
+                                                                </span>
+
+                                                                <small class="d-block text-muted">{{ p.codename }}</small>
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="alert alert-warning">
+                                    No hay permisos disponibles para asignar.
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="border-top pt-4 mt-4 d-flex flex-column flex-md-row gap-2">
+                            <a href="{% url 'lista_roles' %}" class="btn btn-outline-secondary flex-fill">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Cancelar
+                            </a>
+
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="bi bi-save me-1"></i>
+                                Guardar Rol
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center text-muted small mt-3">
+                Los nombres técnicos de los permisos se mantienen debajo para auditoría interna.
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.permiso-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-height: 74px;
+    padding: 0.75rem;
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    border-radius: 0.85rem;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+.permiso-card:hover {
+    border-color: rgba(13, 110, 253, 0.45);
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+.permiso-card:has(input:checked) {
+    border-color: rgba(13, 110, 253, 0.75);
+    background: rgba(13, 110, 253, 0.06);
+}
+
+.permiso-checkbox {
+    margin-top: 0.25rem;
+    cursor: pointer;
+}
+
+.permiso-oculto {
+    display: none !important;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const checkboxes = document.querySelectorAll(".permiso-checkbox");
+    const btnMarcarTodos = document.getElementById("btnMarcarTodos");
+    const btnDesmarcarTodos = document.getElementById("btnDesmarcarTodos");
+    const buscador = document.getElementById("buscadorPermisos");
+    const modulos = document.querySelectorAll(".modulo-permisos");
+    const botonesMarcarModulo = document.querySelectorAll(".btn-marcar-modulo");
+
+    function actualizarContadores() {
+        modulos.forEach(function (modulo) {
+            const checksModulo = modulo.querySelectorAll(".permiso-checkbox");
+            const checksMarcados = modulo.querySelectorAll(".permiso-checkbox:checked");
+            const contador = modulo.querySelector(".contador-modulo");
+
+            if (contador) {
+                contador.textContent = checksMarcados.length + " / " + checksModulo.length;
+            }
+        });
+    }
+
+    function actualizarBotonModulo(boton) {
+        const modulo = boton.closest(".modulo-permisos");
+        const checksModulo = modulo.querySelectorAll(".permiso-checkbox");
+        const checksMarcados = modulo.querySelectorAll(".permiso-checkbox:checked");
+
+        if (checksModulo.length > 0 && checksModulo.length === checksMarcados.length) {
+            boton.innerHTML = '<i class="bi bi-x-square me-1"></i> Desmarcar módulo';
+            boton.classList.remove("btn-outline-primary");
+            boton.classList.add("btn-outline-danger");
+        } else {
+            boton.innerHTML = '<i class="bi bi-check2-square me-1"></i> Marcar módulo';
+            boton.classList.remove("btn-outline-danger");
+            boton.classList.add("btn-outline-primary");
+        }
+    }
+
+    function actualizarBotonesModulo() {
+        botonesMarcarModulo.forEach(function (boton) {
+            actualizarBotonModulo(boton);
+        });
+    }
+
+    function aplicarBusqueda() {
+        const texto = buscador.value.toLowerCase().trim();
+
+        modulos.forEach(function (modulo) {
+            const items = modulo.querySelectorAll(".permiso-item");
+            let visibles = 0;
+
+            items.forEach(function (item) {
+                const contenido = item.innerText.toLowerCase();
+                const coincide = contenido.includes(texto);
+                item.classList.toggle("permiso-oculto", !coincide);
+
+                if (coincide) {
+                    visibles++;
+                }
+            });
+
+            modulo.classList.toggle("permiso-oculto", visibles === 0 && texto !== "");
+        });
+    }
+
+    if (btnMarcarTodos) {
+        btnMarcarTodos.addEventListener("click", function () {
+            checkboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+
+            actualizarContadores();
+            actualizarBotonesModulo();
+        });
+    }
+
+    if (btnDesmarcarTodos) {
+        btnDesmarcarTodos.addEventListener("click", function () {
+            checkboxes.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+
+            actualizarContadores();
+            actualizarBotonesModulo();
+        });
+    }
+
+    botonesMarcarModulo.forEach(function (boton) {
+        boton.addEventListener("click", function () {
+            const modulo = this.closest(".modulo-permisos");
+            const checksModulo = modulo.querySelectorAll(".permiso-checkbox");
+            const checksMarcados = modulo.querySelectorAll(".permiso-checkbox:checked");
+            const todosMarcados = checksModulo.length > 0 && checksModulo.length === checksMarcados.length;
+
+            checksModulo.forEach(function (checkbox) {
+                checkbox.checked = !todosMarcados;
+            });
+
+            actualizarContadores();
+            actualizarBotonesModulo();
+        });
+    });
+
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
+            actualizarContadores();
+            actualizarBotonesModulo();
+        });
+    });
+
+    if (buscador) {
+        buscador.addEventListener("input", aplicarBusqueda);
+    }
+
+    actualizarContadores();
+    actualizarBotonesModulo();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recibo de Venta #{{ venta.id }}</title>
+
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 1.7cm;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            color: #222;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 18px;
+        }
+
+        .empresa {
+            font-size: 26px;
+            font-weight: bold;
+            color: #1f2937;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .empresa-info {
+            font-size: 11px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .linea {
+            border: 0;
+            border-top: 1px solid #ddd;
+            margin: 16px 0 18px 0;
+        }
+
+        .titulo-recibo {
+            width: 100%;
+            margin-bottom: 18px;
+            border-collapse: collapse;
+        }
+
+        .titulo-recibo td {
+            vertical-align: middle;
+        }
+
+        .recibo-numero {
+            font-size: 18px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .badge-pagado {
+            background-color: #16a34a;
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+
+        .bloque-datos {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .bloque-datos td {
+            width: 50%;
+            vertical-align: top;
+            padding: 0 8px 0 0;
+        }
+
+        .caja {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            min-height: 92px;
+        }
+
+        .caja-titulo {
+            font-size: 11px;
+            font-weight: bold;
+            color: #6b7280;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .dato {
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .tabla-productos {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            margin-bottom: 18px;
+        }
+
+        .tabla-productos th {
+            background-color: #1f2937;
+            color: #fff;
+            padding: 9px 7px;
+            font-size: 11px;
+            text-align: left;
+            border: 1px solid #1f2937;
+        }
+
+        .tabla-productos td {
+            padding: 8px 7px;
+            border: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+
+        .tabla-productos tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .fw-bold {
+            font-weight: bold;
+        }
+
+        .text-muted {
+            color: #6b7280;
+        }
+
+        .text-success {
+            color: #15803d;
+        }
+
+        .text-danger {
+            color: #b91c1c;
+        }
+
+        .resumen {
+            width: 42%;
+            margin-left: auto;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        .resumen td {
+            padding: 7px 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .resumen .total td {
+            border-top: 2px solid #1f2937;
+            border-bottom: 0;
+            font-size: 15px;
+            font-weight: bold;
+            padding-top: 10px;
+        }
+
+        .observacion {
+            margin-top: 22px;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #555;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 38px;
+            font-size: 10.5px;
+            color: #777;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 12px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="empresa">{{ config.nombre|default:"FERRETERÍA 7 HERMANOS" }}</div>
+
+        <div class="empresa-info">
+            {% if config.direccion %}{{ config.direccion }}<br>{% endif %}
+            {% if config.telefono %}Teléfono: {{ config.telefono }}{% endif %}
+            {% if config.telefono and config.nit %} | {% endif %}
+            {% if config.nit %}NIT: {{ config.nit }}{% endif %}
+        </div>
+    </div>
+
+    <hr class="linea">
+
+    <table class="titulo-recibo">
+        <tr>
+            <td>
+                <div class="recibo-numero">RECIBO DE VENTA N° 000{{ venta.id }}</div>
+                <div class="text-muted">Documento interno de venta</div>
+            </td>
+            <td class="text-right">
+                <span class="badge-pagado">PAGADO</span>
+            </td>
+        </tr>
+    </table>
+
+    <table class="bloque-datos">
+        <tr>
+            <td>
+                <div class="caja">
+                    <div class="caja-titulo">Datos del Cliente</div>
+
+                    <div class="dato">
+                        <strong>Cliente:</strong> {{ venta.cliente.nombre }}
+                    </div>
+
+                    <div class="dato">
+                        <strong>NIT/CI:</strong> {{ venta.cliente.documento_identidad }}
+                    </div>
+
+                    <div class="dato">
+                        <strong>Teléfono:</strong> {{ venta.cliente.telefono|default:"No registrado" }}
+                    </div>
+
+                    <div class="dato">
+                        <strong>Dirección:</strong> {{ venta.cliente.direccion|default:"No registrada" }}
+                    </div>
+                </div>
+            </td>
+
+            <td>
+                <div class="caja">
+                    <div class="caja-titulo">Datos de la Operación</div>
+
+                    <div class="dato">
+                        <strong>Fecha:</strong> {{ venta.fecha|date:"d/m/Y H:i" }}
+                    </div>
+
+                    <div class="dato">
+                        <strong>Vendedor:</strong>
+                        {% if venta.usuario %}
+                            {{ venta.usuario.nombre|default:venta.usuario.correo }}
+                        {% else %}
+                            No registrado
+                        {% endif %}
+                    </div>
+
+                    <div class="dato">
+                        <strong>Método de pago:</strong>
+                        {% if pago %}
+                            {{ pago.tipo_pago.nombre }}
+                        {% else %}
+                            No registrado
+                        {% endif %}
+                    </div>
+
+                    <div class="dato">
+                        <strong>Descuento:</strong>
+                        {% if venta.descuento %}
+                            {{ venta.descuento.nombre }} - {{ venta.descuento.porcentaje|floatformat:2 }}%
+                        {% else %}
+                            Sin descuento
+                        {% endif %}
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="tabla-productos">
+        <thead>
+            <tr>
+                <th class="text-center" style="width: 10%;">Cant.</th>
+                <th style="width: 48%;">Descripción del Producto</th>
+                <th class="text-right" style="width: 21%;">P. Unitario</th>
+                <th class="text-right" style="width: 21%;">Subtotal</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for detalle in detalles %}
+                <tr>
+                    <td class="text-center">{{ detalle.cantidad }}</td>
+
+                    <td>
+                        <strong>{{ detalle.producto.nombre }}</strong><br>
+                        <span class="text-muted">
+                            {{ detalle.producto.marca.nombre|default:"Genérico" }}
+                        </span>
+                    </td>
+
+                    <td class="text-right">Bs. {{ detalle.precio_unitario }}</td>
+                    <td class="text-right fw-bold">Bs. {{ detalle.subtotal }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="resumen">
+        <tr>
+            <td class="text-right text-muted">Subtotal bruto:</td>
+            <td class="text-right fw-bold">Bs. {{ subtotal_bruto }}</td>
+        </tr>
+
+        {% if venta.descuento %}
+            <tr>
+                <td class="text-right text-danger">Descuento aplicado:</td>
+                <td class="text-right text-danger fw-bold">
+                    {{ venta.descuento.porcentaje|floatformat:2 }}%
+                </td>
+            </tr>
+
+            <tr>
+                <td class="text-right text-muted">Promoción:</td>
+                <td class="text-right fw-bold">{{ venta.descuento.nombre }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td class="text-right text-muted">Descuento aplicado:</td>
+                <td class="text-right fw-bold">Sin descuento</td>
+            </tr>
+        {% endif %}
+
+        <tr class="total">
+            <td class="text-right">TOTAL COBRADO:</td>
+            <td class="text-right text-success">Bs. {{ venta.total }}</td>
+        </tr>
+    </table>
+
+    <div class="observacion">
+        Este recibo certifica una venta registrada en el sistema. El stock fue descontado automáticamente al confirmar el cobro.
+    </div>
+
+    <div class="footer">
+        <p><strong>¡Gracias por su preferencia!</strong></p>
+        <p>Los cambios o devoluciones se aceptan dentro de las 48 horas presentando este comprobante original.</p>
+        <p>Recibo generado por el sistema de gestión de Ferretería 7 Hermanos.</p>
+    </div>
+</body>
+</html>

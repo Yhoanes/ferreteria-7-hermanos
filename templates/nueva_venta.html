@@ -1,0 +1,536 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="row g-4">
+        <div class="col-12 col-lg-4">
+            <div class="card shadow border-0 rounded-4 h-100">
+                <div class="card-header bg-dark text-white py-3 rounded-top-4">
+                    <h4 class="mb-0">
+                        <i class="bi bi-box-seam me-2"></i>
+                        Agregar Producto
+                    </h4>
+                    <small class="text-white-50">Selecciona productos con stock disponible</small>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Producto</label>
+                        <select class="form-select" id="select_producto">
+                            <option value="" disabled selected>Seleccione un producto...</option>
+                            {% for p in productos %}
+                                <option value="{{ p.id }}" data-nombre="{{ p.nombre }} - {{ p.marca.nombre|default:'Genérico' }}" data-precio="{{ p.precio_venta|stringformat:'s' }}" data-stock="{{ p.stock_actual }}">
+                                    {{ p.nombre }} - {{ p.marca.nombre|default:"Genérico" }} | Bs. {{ p.precio_venta }} | Stock: {{ p.stock_actual }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Stock Disp.</label>
+                            <input type="text" class="form-control bg-light" id="stock_info" readonly>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Cantidad</label>
+                            <input type="number" class="form-control" id="cantidad_input" value="1" min="1">
+                        </div>
+                    </div>
+
+                    <div id="alerta_producto" class="alert alert-warning d-none py-2 small"></div>
+
+                    <button type="button" class="btn btn-primary w-100 mt-2 shadow-sm" id="btnAgregarCarrito">
+                        <i class="bi bi-cart-plus me-2"></i>
+                        Agregar a la Lista
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-dark text-white py-3 rounded-top-4">
+                    <h4 class="mb-0">
+                        <i class="bi bi-receipt me-2"></i>
+                        Detalle de Facturación
+                    </h4>
+                    <small class="text-white-50">Cliente, método de pago, descuento y productos vendidos</small>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="POST" id="form_venta" novalidate>
+                        {% csrf_token %}
+                        {{ form.carrito_datos }}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% if form.carrito_datos.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.carrito_datos.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.cliente.id_for_label }}" class="form-label fw-bold">
+                                    Cliente
+                                </label>
+                                <div class="input-group">
+                                    {{ form.cliente }}
+                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoCliente">
+                                        <i class="bi bi-person-plus-fill"></i>
+                                    </button>
+                                </div>
+                                {% if form.cliente.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.cliente.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 col-md-3">
+                                <label for="{{ form.tipo_pago.id_for_label }}" class="form-label fw-bold">
+                                    Método
+                                </label>
+                                {{ form.tipo_pago }}
+                                {% if form.tipo_pago.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.tipo_pago.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 col-md-3">
+                                <label for="{{ form.descuento.id_for_label }}" class="form-label fw-bold">
+                                    Descuento
+                                </label>
+                                <select name="descuento" id="select_descuento" class="form-select">
+                                    <option value="" data-porcentaje="0">Sin descuento</option>
+                                    {% for desc in descuentos %}
+                                        <option value="{{ desc.id }}" data-porcentaje="{{ desc.porcentaje|stringformat:'s' }}" {% if form.descuento.value|stringformat:'s' == desc.id|stringformat:'s' %}selected{% endif %}>
+                                            {{ desc.nombre }} (-{{ desc.porcentaje|floatformat:0 }}%)
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.descuento.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.descuento.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="table-responsive mb-3 border rounded-4">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-end">Precio U.</th>
+                                        <th class="text-end">Subtotal</th>
+                                        <th class="text-center" style="width: 90px;">Quitar</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="cuerpo_carrito">
+                                    <tr id="fila_carrito_vacio">
+                                        <td colspan="5" class="text-center text-muted py-4">
+                                            <i class="bi bi-cart fs-2 d-block mb-2"></i>
+                                            No hay productos agregados a la venta.
+                                        </td>
+                                    </tr>
+                                </tbody>
+
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="3" class="text-end fw-bold">Subtotal Bs.</td>
+                                        <td class="text-end fw-bold" id="subtotal_factura">0.00</td>
+                                        <td></td>
+                                    </tr>
+
+                                    <tr>
+                                        <td colspan="3" class="text-end fw-bold">Descuento Bs.</td>
+                                        <td class="text-end fw-bold text-danger" id="descuento_factura">0.00</td>
+                                        <td></td>
+                                    </tr>
+
+                                    <tr>
+                                        <td colspan="3" class="text-end fw-bold fs-5">Total Bs.</td>
+                                        <td class="text-end fw-bold fs-5 text-success" id="total_factura">0.00</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div id="alerta_venta" class="alert alert-warning d-none"></div>
+
+                        <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2">
+                            <a href="{% url 'historial_ventas' %}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Cancelar
+                            </a>
+
+                            <button type="button" class="btn btn-success btn-lg px-5 shadow" id="btnAbrirCobro">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                Finalizar y Cobrar
+                            </button>
+                        </div>
+
+                        <div class="modal fade" id="modalConfirmarVenta" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow rounded-4">
+                                    <div class="modal-header bg-success text-white rounded-top-4">
+                                        <h5 class="modal-title">
+                                            <i class="bi bi-cash-coin me-2"></i>
+                                            Confirmar venta
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <p class="mb-2">¿Seguro que deseas finalizar y cobrar esta venta?</p>
+
+                                        <div class="alert alert-light border mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Total a cobrar:</span>
+                                                <strong class="text-success">Bs. <span id="total_modal">0.00</span></strong>
+                                            </div>
+                                        </div>
+
+                                        <small class="text-muted">
+                                            Al confirmar, el sistema descontará el stock de los productos vendidos y registrará el pago.
+                                        </small>
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                            Cancelar
+                                        </button>
+
+                                        <button type="button" class="btn btn-success" id="btnConfirmarVenta">
+                                            <i class="bi bi-check2-circle me-1"></i>
+                                            Confirmar y Cobrar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus-fill me-2"></i>
+                    Cliente Rápido
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="formClienteRapido">
+                    {% csrf_token %}
+
+                    <div id="alerta_cliente_ajax" class="alert alert-danger d-none"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre / Razón Social</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Documento (NIT/CI)</label>
+                        <input type="text" name="documento_identidad" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Teléfono</label>
+                        <input type="text" name="telefono" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Dirección</label>
+                        <input type="text" name="direccion" class="form-control">
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <button type="button" class="btn btn-success" id="btnGuardarClienteAjax">
+                    <i class="bi bi-save me-2"></i>
+                    Guardar y Seleccionar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let carrito = [];
+
+function mostrarAlertaProducto(mensaje) {
+    const alerta = document.getElementById("alerta_producto");
+    alerta.textContent = mensaje;
+    alerta.classList.remove("d-none");
+}
+
+function ocultarAlertaProducto() {
+    const alerta = document.getElementById("alerta_producto");
+    alerta.textContent = "";
+    alerta.classList.add("d-none");
+}
+
+function mostrarAlertaVenta(mensaje) {
+    const alerta = document.getElementById("alerta_venta");
+    alerta.textContent = mensaje;
+    alerta.classList.remove("d-none");
+}
+
+function ocultarAlertaVenta() {
+    const alerta = document.getElementById("alerta_venta");
+    alerta.textContent = "";
+    alerta.classList.add("d-none");
+}
+
+function agregarAlCarrito() {
+    ocultarAlertaProducto();
+    ocultarAlertaVenta();
+
+    const selectProd = document.getElementById("select_producto");
+    const cantidadInput = document.getElementById("cantidad_input");
+
+    if (!selectProd.value) {
+        mostrarAlertaProducto("Seleccione un producto de la lista.");
+        return;
+    }
+
+    const opcion = selectProd.options[selectProd.selectedIndex];
+    const cantidad = parseInt(cantidadInput.value);
+    const stockDisponible = parseInt(opcion.getAttribute("data-stock") || "0");
+    const idProd = selectProd.value;
+    const nombreProd = opcion.getAttribute("data-nombre");
+    const precioProd = parseFloat(opcion.getAttribute("data-precio"));
+
+    if (!cantidad || cantidad < 1) {
+        mostrarAlertaProducto("La cantidad debe ser mayor a cero.");
+        return;
+    }
+
+    if (cantidad > stockDisponible) {
+        mostrarAlertaProducto("La cantidad supera el stock disponible.");
+        return;
+    }
+
+    const index = carrito.findIndex(item => item.id_producto === idProd);
+
+    if (index !== -1) {
+        const nuevaCantidad = carrito[index].cantidad + cantidad;
+
+        if (nuevaCantidad > stockDisponible) {
+            mostrarAlertaProducto("Si sumas esta cantidad, superas el stock disponible.");
+            return;
+        }
+
+        carrito[index].cantidad = nuevaCantidad;
+        carrito[index].subtotal = carrito[index].cantidad * precioProd;
+    } else {
+        carrito.push({
+            id_producto: idProd,
+            nombre: nombreProd,
+            precio: precioProd,
+            cantidad: cantidad,
+            subtotal: precioProd * cantidad
+        });
+    }
+
+    selectProd.selectedIndex = 0;
+    cantidadInput.value = 1;
+    document.getElementById("stock_info").value = "";
+
+    actualizarTablaCarrito();
+}
+
+function eliminarDelCarrito(index) {
+    carrito.splice(index, 1);
+    actualizarTablaCarrito();
+}
+
+function actualizarTablaCarrito() {
+    const tbody = document.getElementById("cuerpo_carrito");
+    tbody.innerHTML = "";
+
+    let subtotalBruto = 0;
+
+    if (carrito.length === 0) {
+        tbody.innerHTML = `
+            <tr id="fila_carrito_vacio">
+                <td colspan="5" class="text-center text-muted py-4">
+                    <i class="bi bi-cart fs-2 d-block mb-2"></i>
+                    No hay productos agregados a la venta.
+                </td>
+            </tr>
+        `;
+    }
+
+    carrito.forEach((item, index) => {
+        subtotalBruto += item.subtotal;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${item.nombre}</td>
+            <td class="text-center">
+                <span class="badge bg-primary px-3 py-2">${item.cantidad}</span>
+            </td>
+            <td class="text-end">Bs. ${item.precio.toFixed(2)}</td>
+            <td class="text-end fw-bold">Bs. ${item.subtotal.toFixed(2)}</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarDelCarrito(${index})">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    const selectDescuento = document.getElementById("select_descuento");
+    const descOpcion = selectDescuento.options[selectDescuento.selectedIndex];
+    const porcentajeDesc = parseFloat(descOpcion.getAttribute("data-porcentaje")) || 0;
+
+    const descuentoValor = subtotalBruto * (porcentajeDesc / 100);
+    let totalFinal = subtotalBruto - descuentoValor;
+
+    if (totalFinal < 0) {
+        totalFinal = 0;
+    }
+
+    document.getElementById("subtotal_factura").innerText = subtotalBruto.toFixed(2);
+    document.getElementById("descuento_factura").innerText = descuentoValor.toFixed(2);
+    document.getElementById("total_factura").innerText = totalFinal.toFixed(2);
+    document.getElementById("total_modal").innerText = totalFinal.toFixed(2);
+}
+
+function prepararVenta() {
+    ocultarAlertaVenta();
+
+    if (carrito.length === 0) {
+        mostrarAlertaVenta("Añade al menos un producto a la lista antes de cobrar.");
+        return false;
+    }
+
+    const form = document.getElementById("form_venta");
+
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return false;
+    }
+
+    document.getElementById("id_carrito_datos").value = JSON.stringify(carrito);
+    return true;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const selectProducto = document.getElementById("select_producto");
+    const btnAgregarCarrito = document.getElementById("btnAgregarCarrito");
+    const selectDescuento = document.getElementById("select_descuento");
+    const btnAbrirCobro = document.getElementById("btnAbrirCobro");
+    const btnConfirmarVenta = document.getElementById("btnConfirmarVenta");
+    const btnGuardarCliente = document.getElementById("btnGuardarClienteAjax");
+    const formCliente = document.getElementById("formClienteRapido");
+
+    selectProducto.addEventListener("change", function () {
+        const opcion = this.options[this.selectedIndex];
+        document.getElementById("stock_info").value = opcion.getAttribute("data-stock") || 0;
+        ocultarAlertaProducto();
+    });
+
+    btnAgregarCarrito.addEventListener("click", agregarAlCarrito);
+
+    selectDescuento.addEventListener("change", actualizarTablaCarrito);
+
+    btnAbrirCobro.addEventListener("click", function () {
+        if (prepararVenta()) {
+            const modal = new bootstrap.Modal(document.getElementById("modalConfirmarVenta"));
+            modal.show();
+        }
+    });
+
+    btnConfirmarVenta.addEventListener("click", function () {
+        if (prepararVenta()) {
+            btnConfirmarVenta.disabled = true;
+            btnConfirmarVenta.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Registrando...';
+            document.getElementById("form_venta").submit();
+        }
+    });
+
+    btnGuardarCliente.addEventListener("click", function () {
+        const formData = new FormData(formCliente);
+        const alertaAjax = document.getElementById("alerta_cliente_ajax");
+
+        alertaAjax.classList.add("d-none");
+        alertaAjax.textContent = "";
+
+        btnGuardarCliente.disabled = true;
+        btnGuardarCliente.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Guardando...';
+
+        fetch("{% url 'crear_cliente_ajax' %}", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const selectCliente = document.getElementById("id_cliente");
+                const nuevaOpcion = new Option(`${data.nombre} (Nuevo)`, data.id, true, true);
+
+                selectCliente.add(nuevaOpcion);
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById("modalNuevoCliente"));
+                modal.hide();
+
+                formCliente.reset();
+            } else {
+                alertaAjax.textContent = data.error || "No se pudo guardar el cliente.";
+                alertaAjax.classList.remove("d-none");
+            }
+        })
+        .catch(() => {
+            alertaAjax.textContent = "Ocurrió un error al guardar el cliente.";
+            alertaAjax.classList.remove("d-none");
+        })
+        .finally(() => {
+            btnGuardarCliente.disabled = false;
+            btnGuardarCliente.innerHTML = '<i class="bi bi-save me-2"></i>Guardar y Seleccionar';
+        });
+    });
+});
+</script>
+{% endblock %}

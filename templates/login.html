@@ -1,0 +1,176 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Ferretería 7 Hermanos</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f3f5f9 0%, #e8edf5 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 430px;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border: 0;
+            border-radius: 1.25rem;
+            box-shadow: 0 1rem 2.5rem rgba(15, 23, 42, 0.12);
+            padding: 2.25rem;
+        }
+
+        .logo-container {
+            width: 150px;
+            margin: 0 auto 1rem;
+        }
+
+        .logo-img {
+            width: 100%;
+            height: auto;
+            border-radius: 0.9rem;
+            object-fit: contain;
+        }
+
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-right: 0;
+        }
+
+        .form-control {
+            border-left: 0;
+        }
+
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #86b7fe;
+        }
+
+        .input-group:focus-within .input-group-text {
+            border-color: #86b7fe;
+        }
+
+        .btn-login {
+            min-height: 48px;
+        }
+
+        .password-toggle {
+            border-left: 0;
+        }
+
+        .footer-text {
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 1.5rem;
+            }
+
+            .logo-container {
+                width: 125px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="login-wrapper">
+        <div class="login-card">
+            <div class="text-center mb-4">
+                <div class="logo-container">
+                    <img src="{% static 'img/logo.png' %}" alt="Logo Ferretería 7 Hermanos" class="logo-img shadow-sm">
+                </div>
+
+                <h4 class="fw-bold text-dark mb-1">Ferretería 7 Hermanos</h4>
+                <p class="text-muted mb-0">Acceso al Sistema de Control</p>
+            </div>
+
+            {% if messages %}
+                <div class="mb-3">
+                    {% for message in messages %}
+                        <div class="alert alert-danger py-2 px-3 mb-2 d-flex align-items-center gap-2" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'login' %}" novalidate autocomplete="off">
+                {% csrf_token %}
+
+                <input type="text" name="fake_user" autocomplete="off" tabindex="-1" style="position:absolute; left:-9999px; opacity:0;">
+                <input type="password" name="fake_pass" autocomplete="new-password" tabindex="-1" style="position:absolute; left:-9999px; opacity:0;">
+
+                <div class="mb-3">
+                    <label for="usuario" class="form-label text-secondary fw-bold small">USUARIO</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-person text-muted"></i>
+                        </span>
+                        <input type="text" id="usuario" name="usuario" class="form-control form-control-lg fs-6" placeholder="Ingresa tu usuario" required autofocus autocomplete="off" autocapitalize="none" spellcheck="false">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label text-secondary fw-bold small">CONTRASEÑA</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-lock text-muted"></i>
+                        </span>
+                        <input type="password" id="password" name="password" class="form-control form-control-lg fs-6" placeholder="••••••••" required autocomplete="new-password">
+                        <button class="btn btn-outline-secondary password-toggle" type="button" id="btnTogglePassword" aria-label="Mostrar u ocultar contraseña">
+                            <i class="bi bi-eye" id="iconPassword"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 btn-lg fs-6 fw-bold shadow-sm btn-login">
+                    Entrar al Sistema
+                    <i class="bi bi-arrow-right ms-2"></i>
+                </button>
+            </form>
+
+            <div class="text-center text-muted footer-text mt-4">
+                Sistema de gestión interna
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const usuario = document.getElementById("usuario");
+            const password = document.getElementById("password");
+            const btnTogglePassword = document.getElementById("btnTogglePassword");
+            const iconPassword = document.getElementById("iconPassword");
+
+            setTimeout(function () {
+                usuario.value = "";
+                password.value = "";
+            }, 100);
+
+            btnTogglePassword.addEventListener("click", function () {
+                const visible = password.type === "text";
+                password.type = visible ? "password" : "text";
+                iconPassword.className = visible ? "bi bi-eye" : "bi bi-eye-slash";
+            });
+        });
+    </script>
+</body>
+</html>

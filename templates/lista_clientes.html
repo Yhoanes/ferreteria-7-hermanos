@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-3 rounded-top-4">
+            <div>
+                <h4 class="mb-0">
+                    <i class="bi bi-people-fill me-2"></i>
+                    Lista de Clientes
+                </h4>
+                <small class="text-white-50">Gestión de clientes activos e inactivos</small>
+            </div>
+
+            {% if 'add_cliente' in perms_ferreteria or request.user.is_superuser %}
+                <a href="{% url 'nuevo_cliente' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-person-plus-fill me-1"></i>
+                    Nuevo Cliente
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="card-body p-4">
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white text-muted border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="buscadorTabla" class="form-control border-start-0" placeholder="Buscar cliente, NIT, CI o teléfono...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tablaClientes">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 90px;">ID</th>
+                            <th>Cliente</th>
+                            <th>Documento</th>
+                            <th>Teléfono</th>
+                            <th>Dirección</th>
+                            <th>Estado</th>
+                            <th class="text-center" style="width: 140px;">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for cliente in clientes %}
+                            <tr class="{% if not cliente.activo %}table-secondary text-muted{% endif %}">
+                                <td>
+                                    <span class="badge bg-light text-dark border">#{{ cliente.id }}</span>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+
+                                        <div>
+                                            <div class="fw-bold">{{ cliente.nombre }}</div>
+                                            <small class="text-muted">Cliente registrado</small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="fw-semibold">{{ cliente.documento_identidad }}</span>
+                                </td>
+
+                                <td>
+                                    {% if cliente.telefono %}
+                                        <i class="bi bi-telephone me-1 text-muted"></i>
+                                        {{ cliente.telefono }}
+                                    {% else %}
+                                        <span class="text-muted small">Sin teléfono</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if cliente.direccion %}
+                                        {{ cliente.direccion }}
+                                    {% else %}
+                                        <span class="text-muted small">Sin dirección</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if cliente.activo %}
+                                        <span class="badge bg-success px-3 py-2">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger px-3 py-2">Inactivo</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        {% if 'change_cliente' in perms_ferreteria or request.user.is_superuser %}
+                                            <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-sm btn-outline-primary" title="Editar cliente">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                        {% endif %}
+
+                                        {% if 'delete_cliente' in perms_ferreteria or request.user.is_superuser %}
+                                            <form method="POST" action="{% url 'estado_cliente' cliente.id %}" class="d-inline form-estado-cliente" data-nombre="{{ cliente.nombre }}" data-activo="{% if cliente.activo %}1{% else %}0{% endif %}">
+                                                {% csrf_token %}
+                                                <button type="button" class="btn btn-sm {% if cliente.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %} btn-abrir-estado" title="{% if cliente.activo %}Dar de baja{% else %}Reactivar{% endif %}">
+                                                    <i class="bi {% if cliente.activo %}bi-trash3-fill{% else %}bi-check-circle-fill{% endif %}"></i>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <i class="bi bi-people fs-1 d-block mb-2"></i>
+                                    No hay clientes registrados en el sistema.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-light border mt-4 mb-0">
+                <div class="d-flex gap-2">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <div>
+                        Los clientes inactivos no se eliminan del sistema; solo quedan deshabilitados para futuras ventas.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEstadoCliente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header text-white rounded-top-4" id="modalEstadoHeader">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmar acción
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-2" id="textoEstadoCliente"></p>
+
+                <div class="alert alert-light border mb-2">
+                    <strong id="nombreEstadoCliente"></strong>
+                </div>
+
+                <small class="text-muted" id="ayudaEstadoCliente"></small>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <button type="button" class="btn" id="btnConfirmarEstadoCliente">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buscador = document.getElementById("buscadorTabla");
+    const filas = document.querySelectorAll("#tablaClientes tbody tr");
+    const botonesEstado = document.querySelectorAll(".btn-abrir-estado");
+
+    const modalElemento = document.getElementById("modalEstadoCliente");
+    const modalHeader = document.getElementById("modalEstadoHeader");
+    const textoEstado = document.getElementById("textoEstadoCliente");
+    const nombreEstado = document.getElementById("nombreEstadoCliente");
+    const ayudaEstado = document.getElementById("ayudaEstadoCliente");
+    const btnConfirmar = document.getElementById("btnConfirmarEstadoCliente");
+
+    let formularioSeleccionado = null;
+
+    if (buscador) {
+        buscador.addEventListener("input", function () {
+            const texto = this.value.toLowerCase().trim();
+
+            filas.forEach(function (fila) {
+                const contenido = fila.innerText.toLowerCase();
+                fila.style.display = contenido.includes(texto) ? "" : "none";
+            });
+        });
+    }
+
+    botonesEstado.forEach(function (boton) {
+        boton.addEventListener("click", function () {
+            formularioSeleccionado = this.closest("form");
+
+            const nombre = formularioSeleccionado.dataset.nombre || "este cliente";
+            const activo = formularioSeleccionado.dataset.activo === "1";
+
+            nombreEstado.textContent = nombre;
+
+            modalHeader.classList.remove("bg-danger", "bg-success");
+            btnConfirmar.classList.remove("btn-danger", "btn-success");
+
+            if (activo) {
+                modalHeader.classList.add("bg-danger");
+                btnConfirmar.classList.add("btn-danger");
+                btnConfirmar.innerHTML = '<i class="bi bi-trash3-fill me-1"></i> Dar de baja';
+                textoEstado.textContent = "¿Seguro que deseas dar de baja este cliente?";
+                ayudaEstado.textContent = "El cliente no se eliminará de la base de datos, solo quedará inactivo.";
+            } else {
+                modalHeader.classList.add("bg-success");
+                btnConfirmar.classList.add("btn-success");
+                btnConfirmar.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Reactivar';
+                textoEstado.textContent = "¿Seguro que deseas reactivar este cliente?";
+                ayudaEstado.textContent = "El cliente volverá a estar disponible para futuras ventas.";
+            }
+
+            const modal = new bootstrap.Modal(modalElemento);
+            modal.show();
+        });
+    });
+
+    btnConfirmar.addEventListener("click", function () {
+        if (formularioSeleccionado) {
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Procesando...';
+            formularioSeleccionado.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

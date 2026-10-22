@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="bi bi-speedometer2 text-primary me-2"></i>
+                Panel de Control
+            </h2>
+            <small class="text-muted">Resumen general de ventas, caja, clientes e inventario</small>
+        </div>
+
+        <span class="badge bg-light text-dark border px-3 py-2">
+            <i class="bi bi-person-circle me-1"></i>
+            {{ request.user.usuario_ferreteria.nombre|default:request.user.username }}
+            <span class="text-muted mx-1">|</span>
+            {% now "j \d\e F \d\e Y" %}
+        </span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 border-start border-success border-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">Ingresos Hoy</div>
+                            <div class="h4 mb-0 fw-bold text-dark">Bs. {{ ingresos_hoy|floatformat:2 }}</div>
+                        </div>
+                        <i class="bi bi-cash-stack fs-1 text-success opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 border-start border-primary border-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">Ventas Hoy</div>
+                            <div class="h4 mb-0 fw-bold text-dark">{{ cantidad_ventas_hoy|default:"0" }}</div>
+                        </div>
+                        <i class="bi bi-cart-check fs-1 text-primary opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 border-start border-info border-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">Productos Disponibles</div>
+                            <div class="h4 mb-0 fw-bold text-dark">{{ total_productos|default:"0" }}</div>
+                        </div>
+                        <i class="bi bi-box-seam fs-1 text-info opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100 border-start border-warning border-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">Clientes Activos</div>
+                            <div class="h4 mb-0 fw-bold text-dark">{{ total_clientes|default:"0" }}</div>
+                        </div>
+                        <i class="bi bi-people fs-1 text-warning opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-header bg-white py-3 rounded-top-4">
+            <h6 class="m-0 fw-bold text-secondary">
+                <i class="bi bi-wallet2 me-2"></i>
+                Métodos de Pago - Caja de Hoy
+            </h6>
+        </div>
+
+        <div class="card-body">
+            <div class="row g-3 text-center justify-content-center">
+                {% for pago in resumen_pagos %}
+                    <div class="col-6 col-md">
+                        <div class="p-3 border rounded-4 h-100 hover-shadow transition bg-white">
+                            {% if 'efectivo' in pago.nombre|lower %}
+                                <i class="bi bi-cash-stack fs-1 text-success mb-2 d-block"></i>
+                            {% elif 'qr' in pago.nombre|lower %}
+                                <i class="bi bi-qr-code-scan fs-1 text-info mb-2 d-block"></i>
+                            {% elif 'transferencia' in pago.nombre|lower %}
+                                <i class="bi bi-arrow-left-right fs-1 text-warning mb-2 d-block"></i>
+                            {% elif 'tarjeta' in pago.nombre|lower %}
+                                <i class="bi bi-credit-card fs-1 text-primary mb-2 d-block"></i>
+                            {% else %}
+                                <i class="bi bi-wallet2 fs-1 text-danger mb-2 d-block"></i>
+                            {% endif %}
+
+                            <h6 class="text-muted fw-bold text-uppercase mb-1" style="font-size: 0.78rem;">
+                                {{ pago.nombre }}
+                            </h6>
+
+                            <h4 class="fw-bold {% if pago.total > 0 %}text-dark{% else %}text-muted opacity-50{% endif %} mt-2 mb-0">
+                                Bs. {{ pago.total|floatformat:2 }}
+                            </h4>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12 text-muted py-3">
+                        No hay métodos de pago configurados en el sistema.
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-8">
+            <div class="card shadow border-0 rounded-4 mb-4">
+                <div class="card-header bg-white py-3 rounded-top-4">
+                    <h6 class="m-0 fw-bold text-secondary">
+                        <i class="bi bi-graph-up-arrow me-2"></i>
+                        Evolución de Ventas - Últimos 7 días
+                    </h6>
+                </div>
+
+                <div class="card-body">
+                    <canvas id="graficoVentas" height="110"></canvas>
+                </div>
+            </div>
+
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center rounded-top-4">
+                    <h6 class="m-0 fw-bold">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Últimas 5 Transacciones
+                    </h6>
+
+                    {% if 'view_venta' in perms_ferreteria or request.user.is_superuser %}
+                        <a href="{% url 'historial_ventas' %}" class="btn btn-sm btn-outline-light">
+                            Ver Todas
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Factura</th>
+                                    <th>Cliente</th>
+                                    <th>Fecha y Hora</th>
+                                    <th class="text-end pe-3">Total Cobrado</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for venta in ultimas_ventas %}
+                                    <tr>
+                                        <td class="ps-3">
+                                            {% if 'view_venta' in perms_ferreteria or request.user.is_superuser %}
+                                                <a href="{% url 'detalle_venta' venta.id %}" class="fw-bold text-decoration-none">
+                                                    #{{ venta.id }}
+                                                </a>
+                                            {% else %}
+                                                <strong>#{{ venta.id }}</strong>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>{{ venta.cliente.nombre }}</td>
+                                        <td>{{ venta.fecha|date:"d M, H:i" }}</td>
+                                        <td class="text-end pe-3 fw-bold text-success">Bs. {{ venta.total }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">
+                                            Aún no hay ventas registradas.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="card shadow border-0 rounded-4 mb-4">
+                <div class="card-header bg-danger text-white py-3 rounded-top-4">
+                    <h6 class="m-0 fw-bold">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Alertas de Stock Bajo
+                    </h6>
+                </div>
+
+                <div class="card-body">
+                    {% if productos_agotados > 0 %}
+                        <div class="alert alert-danger py-2 mb-3">
+                            <i class="bi bi-x-circle-fill me-2"></i>
+                            Tienes <strong>{{ productos_agotados }}</strong> productos agotados.
+                        </div>
+                    {% endif %}
+
+                    <h6 class="text-muted fw-bold mb-3 fs-7 text-uppercase">
+                        Próximos a agotarse
+                    </h6>
+
+                    <ul class="list-group list-group-flush mb-0">
+                        {% for producto in productos_bajo_stock %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <div class="text-truncate pe-2">
+                                    <span class="fw-bold">{{ producto.nombre }}</span>
+                                    <small class="text-muted d-block">Mínimo: {{ producto.stock_minimo }}</small>
+                                </div>
+
+                                <span class="badge {% if producto.stock_actual <= 0 %}bg-danger{% else %}bg-warning text-dark{% endif %} rounded-pill shadow-sm">
+                                    {{ producto.stock_actual }}
+                                </span>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item px-0 text-center text-success py-3">
+                                <i class="bi bi-check-circle fs-3 d-block mb-1"></i>
+                                Stock saludable.
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow border-0 rounded-4 mb-4">
+                <div class="card-header bg-success text-white py-3 d-flex justify-content-between align-items-center rounded-top-4">
+                    <h6 class="m-0 fw-bold">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                        Ingresos a Almacén
+                    </h6>
+
+                    {% if 'view_entradastock' in perms_ferreteria or request.user.is_superuser %}
+                        <a href="{% url 'lista_entradas' %}" class="btn btn-sm btn-outline-light py-0">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 fs-7">
+                            <tbody>
+                                {% for detalle in ultimas_entradas %}
+                                    <tr>
+                                        <td class="fw-bold ps-3 py-2">{{ detalle.producto.nombre }}</td>
+                                        <td class="text-center py-2">
+                                            <span class="badge bg-success">+{{ detalle.cantidad }}</span>
+                                        </td>
+                                        <td class="text-muted pe-3 text-end py-2" style="font-size: 0.75rem;">
+                                            {{ detalle.entrada.fecha|date:"d M" }}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-center py-3 text-muted">
+                                            Sin ingresos recientes.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-danger text-white py-3 d-flex justify-content-between align-items-center rounded-top-4">
+                    <h6 class="m-0 fw-bold">
+                        <i class="bi bi-box-arrow-right me-2"></i>
+                        Mermas / Salidas
+                    </h6>
+
+                    {% if 'view_salidastock' in perms_ferreteria or request.user.is_superuser %}
+                        <a href="{% url 'lista_salidas' %}" class="btn btn-sm btn-outline-light py-0">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 fs-7">
+                            <tbody>
+                                {% for detalle in ultimas_salidas %}
+                                    <tr>
+                                        <td class="fw-bold ps-3 py-2 text-truncate" style="max-width: 120px;">
+                                            {{ detalle.producto.nombre }}
+                                        </td>
+                                        <td class="text-center py-2">
+                                            <span class="badge bg-danger">-{{ detalle.cantidad }}</span>
+                                        </td>
+                                        <td class="text-muted pe-3 text-end text-truncate py-2" style="max-width: 90px; font-size: 0.75rem;" title="{{ detalle.salida.motivo }}">
+                                            {{ detalle.salida.motivo }}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-center py-3 text-muted">
+                                            Sin salidas recientes.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-4 {
+        border-left-width: 4px !important;
+    }
+
+    .text-xs {
+        font-size: 0.75rem;
+    }
+
+    .fs-7 {
+        font-size: 0.85rem;
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-2px);
+    }
+
+    .transition {
+        transition: all 0.3s ease;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const grafico = document.getElementById("graficoVentas");
+
+    if (!grafico) {
+        return;
+    }
+
+    const fechas = {{ fechas_grafico|default:"[]"|safe }};
+    const totales = {{ totales_grafico|default:"[]"|safe }};
+
+    new Chart(grafico.getContext("2d"), {
+        type: "line",
+        data: {
+            labels: fechas,
+            datasets: [{
+                label: "Ingresos Diarios (Bs.)",
+                data: totales,
+                backgroundColor: "rgba(25, 135, 84, 0.16)",
+                borderColor: "rgba(25, 135, 84, 1)",
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: "#ffffff",
+                pointBorderColor: "rgba(25, 135, 84, 1)",
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return "Bs. " + Number(context.parsed.y || 0).toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function (value) {
+                            return "Bs. " + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

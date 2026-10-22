@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow border-0 rounded-4 mt-3">
+                <div class="card-header bg-success text-white py-3 rounded-top-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div>
+                            <h4 class="mb-0">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                Registrar Entrada de Stock
+                            </h4>
+                            <small class="text-white-50">Compra, reposición o ajuste positivo de inventario</small>
+                        </div>
+
+                        <a href="{% url 'lista_entradas' %}" class="btn btn-light btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Volver
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12">
+                                <label for="{{ form.proveedor.id_for_label }}" class="form-label fw-bold">
+                                    Proveedor
+                                </label>
+                                {{ form.proveedor }}
+                                {% if form.proveedor.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.proveedor.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12">
+                                <label for="{{ form.producto.id_for_label }}" class="form-label fw-bold">
+                                    Producto
+                                </label>
+                                {{ form.producto }}
+                                {% if form.producto.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.producto.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 bg-light border rounded-4 p-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.cantidad.id_for_label }}" class="form-label fw-bold">
+                                    Cantidad a ingresar
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-white">
+                                        <i class="bi bi-plus-circle text-success"></i>
+                                    </span>
+                                    {{ form.cantidad }}
+                                </div>
+                                {% if form.cantidad.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.cantidad.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.costo.id_for_label }}" class="form-label fw-bold">
+                                    Costo Unitario
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-white">Bs.</span>
+                                    {{ form.costo }}
+                                </div>
+                                {% if form.costo.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.costo.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.observacion.id_for_label }}" class="form-label fw-bold">
+                                Observación / Justificación
+                            </label>
+                            {{ form.observacion }}
+                            {% if form.observacion.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.observacion.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Ejemplo: ingreso por compra ordinaria, factura, reposición o ajuste autorizado.
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info border-0 shadow-sm rounded-3 py-3">
+                            <div class="d-flex gap-2">
+                                <i class="bi bi-info-circle-fill fs-5"></i>
+                                <div>
+                                    Al confirmar, el sistema aumentará el stock actual del producto seleccionado y guardará el historial de la entrada.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-top pt-4 mt-4 d-flex flex-column flex-md-row gap-2 justify-content-md-end">
+                            <a href="{% url 'lista_entradas' %}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Cancelar
+                            </a>
+
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="bi bi-check2-circle me-1"></i>
+                                Confirmar Ingreso
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center text-muted small mt-3">
+                El stock solo debe modificarse desde entradas y salidas de inventario.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

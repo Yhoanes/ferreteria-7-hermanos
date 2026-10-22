@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-9">
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-dark text-white rounded-top-4 py-3">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <h4 class="mb-0">
+                            <i class="bi {% if user_edit %}bi-pencil-square{% else %}bi-person-plus{% endif %} me-2"></i>
+                            {% if user_edit %}Editar Usuario{% else %}Nuevo Usuario del Sistema{% endif %}
+                        </h4>
+                        {% if user_edit %}
+                            <span class="badge bg-light text-dark px-3 py-2">{{ user_edit.nombre }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label fw-bold">Nombre Completo</label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.nombre.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.correo.id_for_label }}" class="form-label fw-bold">Correo Electrónico</label>
+                                {{ form.correo }}
+                                {% if form.correo.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.correo.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.contrasena.id_for_label }}" class="form-label fw-bold">
+                                    Contraseña
+                                </label>
+                                {{ form.contrasena }}
+                                {% if user_edit %}
+                                    <div class="form-text">Deja este campo vacío si no deseas cambiar la contraseña.</div>
+                                {% else %}
+                                    <div class="form-text">Debe cumplir las reglas de seguridad del sistema.</div>
+                                {% endif %}
+                                {% if form.contrasena.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.contrasena.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label for="{{ form.rol.id_for_label }}" class="form-label fw-bold">Rol Principal del Sistema</label>
+                                {{ form.rol }}
+                                {% if form.rol.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.rol.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-column flex-md-row gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-1"></i>
+                                {% if user_edit %}Actualizar Usuario{% else %}Guardar Usuario{% endif %}
+                            </button>
+
+                            <a href="{% url 'lista_usuarios' %}" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

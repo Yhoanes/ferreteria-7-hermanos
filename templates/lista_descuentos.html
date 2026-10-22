@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-3 rounded-top-4">
+            <div>
+                <h4 class="mb-0">
+                    <i class="bi bi-percent me-2"></i>
+                    Gestión de Descuentos
+                </h4>
+                <small class="text-white-50">Programación y control de descuentos activos o vencidos</small>
+            </div>
+
+            {% if 'add_descuento' in perms_ferreteria or request.user.is_superuser %}
+                <a href="{% url 'nuevo_descuento' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Programar Descuento
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="card-body p-4">
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white text-muted border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="buscadorTabla" class="form-control border-start-0" placeholder="Buscar descuento, porcentaje o fecha...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tablaDescuentos">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Descuento</th>
+                            <th class="text-center">Porcentaje</th>
+                            <th>Inicia</th>
+                            <th>Termina</th>
+                            <th>Estado</th>
+                            <th class="text-center" style="width: 130px;">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% now "Y-m-d H:i" as ahora %}
+                        {% for d in descuentos %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                            <i class="bi bi-percent"></i>
+                                        </div>
+
+                                        <div>
+                                            <div class="fw-bold text-primary">{{ d.nombre }}</div>
+                                            <small class="text-muted">Descuento programado</small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge bg-success fs-6 px-3 py-2">
+                                        {{ d.porcentaje }} %
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold">{{ d.fecha_inicio|date:"d/m/Y" }}</div>
+                                    <small class="text-muted">{{ d.fecha_inicio|date:"H:i" }}</small>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold">{{ d.fecha_fin|date:"d/m/Y" }}</div>
+                                    <small class="text-muted">{{ d.fecha_fin|date:"H:i" }}</small>
+                                </td>
+
+                                <td>
+                                    {% if d.fecha_inicio|date:"Y-m-d H:i" > ahora %}
+                                        <span class="badge bg-info text-dark px-3 py-2">
+                                            <i class="bi bi-clock me-1"></i>
+                                            Programado
+                                        </span>
+                                    {% elif d.fecha_fin|date:"Y-m-d H:i" < ahora %}
+                                        <span class="badge bg-secondary px-3 py-2">
+                                            <i class="bi bi-calendar-x me-1"></i>
+                                            Vencido
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success px-3 py-2">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            Activo
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        {% if 'change_descuento' in perms_ferreteria or request.user.is_superuser %}
+                                            <a href="{% url 'editar_descuento' d.id %}" class="btn btn-sm btn-outline-primary" title="Editar descuento">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                        {% endif %}
+
+                                        {% if 'delete_descuento' in perms_ferreteria or request.user.is_superuser %}
+                                            <form method="POST" action="{% url 'eliminar_descuento' d.id %}" class="d-inline form-eliminar" data-nombre="{{ d.nombre }}">
+                                                {% csrf_token %}
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-abrir-eliminar" title="Eliminar descuento">
+                                                    <i class="bi bi-trash3-fill"></i>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="bi bi-percent fs-1 d-block mb-2"></i>
+                                    No hay descuentos programados.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-light border mt-4 mb-0">
+                <div class="d-flex gap-2">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <div>
+                        Solo los descuentos dentro de su rango de fecha estarán disponibles al registrar una venta.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarDescuento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header bg-danger text-white rounded-top-4">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmar eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-2">¿Seguro que deseas eliminar este descuento?</p>
+
+                <div class="alert alert-light border mb-2">
+                    <strong id="nombreEliminarDescuento"></strong>
+                </div>
+
+                <small class="text-muted">
+                    Esta acción no se puede deshacer. Si el descuento ya fue usado en ventas, el sistema impedirá la eliminación.
+                </small>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminarDescuento">
+                    <i class="bi bi-trash me-1"></i>
+                    Eliminar Descuento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buscador = document.getElementById("buscadorTabla");
+    const filas = document.querySelectorAll("#tablaDescuentos tbody tr");
+    const botonesEliminar = document.querySelectorAll(".btn-abrir-eliminar");
+    const modalElemento = document.getElementById("modalEliminarDescuento");
+    const nombreEliminar = document.getElementById("nombreEliminarDescuento");
+    const btnConfirmarEliminar = document.getElementById("btnConfirmarEliminarDescuento");
+    let formularioSeleccionado = null;
+
+    if (buscador) {
+        buscador.addEventListener("input", function () {
+            const texto = this.value.toLowerCase().trim();
+
+            filas.forEach(function (fila) {
+                const contenido = fila.innerText.toLowerCase();
+                fila.style.display = contenido.includes(texto) ? "" : "none";
+            });
+        });
+    }
+
+    botonesEliminar.forEach(function (boton) {
+        boton.addEventListener("click", function () {
+            formularioSeleccionado = this.closest("form");
+            const nombre = formularioSeleccionado.dataset.nombre || "este descuento";
+            nombreEliminar.textContent = nombre;
+
+            const modal = new bootstrap.Modal(modalElemento);
+            modal.show();
+        });
+    });
+
+    btnConfirmarEliminar.addEventListener("click", function () {
+        if (formularioSeleccionado) {
+            btnConfirmarEliminar.disabled = true;
+            btnConfirmarEliminar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Eliminando...';
+            formularioSeleccionado.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

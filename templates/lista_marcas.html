@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-3 rounded-top-4">
+            <div>
+                <h4 class="mb-0">
+                    <i class="bi bi-tags me-2"></i>
+                    Gestión de Marcas
+                </h4>
+                <small class="text-white-50">Registro y administración de marcas de productos</small>
+            </div>
+
+            {% if 'add_marca' in perms_ferreteria or request.user.is_superuser %}
+                <a href="{% url 'nueva_marca' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Nueva Marca
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="card-body p-4">
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white text-muted border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="buscadorTabla" class="form-control border-start-0" placeholder="Buscar marca...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tablaMarcas">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 90px;">ID</th>
+                            <th>Marca</th>
+                            <th>Descripción</th>
+                            <th class="text-center" style="width: 130px;">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for marca in marcas %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-dark border">#{{ marca.id }}</span>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                            <i class="bi bi-bookmark-star"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-primary">{{ marca.nombre }}</div>
+                                            <small class="text-muted">Marca de producto</small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if marca.descripcion %}
+                                        {{ marca.descripcion }}
+                                    {% else %}
+                                        <span class="text-muted small">Sin descripción</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        {% if 'change_marca' in perms_ferreteria or request.user.is_superuser %}
+                                            <a href="{% url 'editar_marca' marca.id %}" class="btn btn-sm btn-outline-primary" title="Editar marca">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                        {% endif %}
+
+                                        {% if 'delete_marca' in perms_ferreteria or request.user.is_superuser %}
+                                            <form method="POST" action="{% url 'eliminar_marca' marca.id %}" class="d-inline form-eliminar" data-nombre="{{ marca.nombre }}">
+                                                {% csrf_token %}
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-abrir-eliminar" title="Eliminar marca">
+                                                    <i class="bi bi-trash3-fill"></i>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-5">
+                                    <i class="bi bi-tags fs-1 d-block mb-2"></i>
+                                    No hay marcas registradas en el sistema.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarMarca" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header bg-danger text-white rounded-top-4">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmar eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-2">¿Seguro que deseas eliminar esta marca?</p>
+
+                <div class="alert alert-light border mb-2">
+                    <strong id="nombreEliminarMarca"></strong>
+                </div>
+
+                <small class="text-muted">
+                    Esta acción no se puede deshacer. Si la marca tiene productos asociados, el sistema impedirá la eliminación.
+                </small>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminarMarca">
+                    <i class="bi bi-trash me-1"></i>
+                    Eliminar Marca
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buscador = document.getElementById("buscadorTabla");
+    const filas = document.querySelectorAll("#tablaMarcas tbody tr");
+    const botonesEliminar = document.querySelectorAll(".btn-abrir-eliminar");
+    const modalElemento = document.getElementById("modalEliminarMarca");
+    const nombreEliminar = document.getElementById("nombreEliminarMarca");
+    const btnConfirmarEliminar = document.getElementById("btnConfirmarEliminarMarca");
+    let formularioSeleccionado = null;
+
+    if (buscador) {
+        buscador.addEventListener("input", function () {
+            const texto = this.value.toLowerCase().trim();
+
+            filas.forEach(function (fila) {
+                const contenido = fila.innerText.toLowerCase();
+                fila.style.display = contenido.includes(texto) ? "" : "none";
+            });
+        });
+    }
+
+    botonesEliminar.forEach(function (boton) {
+        boton.addEventListener("click", function () {
+            formularioSeleccionado = this.closest("form");
+            const nombre = formularioSeleccionado.dataset.nombre || "esta marca";
+            nombreEliminar.textContent = nombre;
+
+            const modal = new bootstrap.Modal(modalElemento);
+            modal.show();
+        });
+    });
+
+    btnConfirmarEliminar.addEventListener("click", function () {
+        if (formularioSeleccionado) {
+            btnConfirmarEliminar.disabled = true;
+            btnConfirmarEliminar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Eliminando...';
+            formularioSeleccionado.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

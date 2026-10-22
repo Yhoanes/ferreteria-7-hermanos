@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-3 rounded-top-4">
+            <div>
+                <h4 class="mb-0">
+                    <i class="bi bi-grid-3x3-gap-fill me-2"></i>
+                    Catálogo de Productos
+                </h4>
+                <small class="text-white-50">Consulta rápida de productos activos, precios y disponibilidad</small>
+            </div>
+
+            <a href="{% url 'lista_productos' %}" class="btn btn-light btn-sm">
+                <i class="bi bi-box-seam me-1"></i>
+                Gestionar Productos
+            </a>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white text-muted border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="buscadorTabla" class="form-control border-start-0" placeholder="Buscar por código, nombre, categoría o proveedor...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tablaCatalogo">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 130px;">Código</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Proveedor</th>
+                            <th>Precio Venta</th>
+                            <th class="text-center">Stock</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for p in productos %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-dark border px-3 py-2">{{ p.codigo }}</span>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                            <i class="bi bi-box-seam"></i>
+                                        </div>
+
+                                        <div>
+                                            <div class="fw-bold">{{ p.nombre }}</div>
+                                            {% if p.marca %}
+                                                <small class="text-muted">{{ p.marca.nombre }}</small>
+                                            {% else %}
+                                                <small class="text-muted">Sin marca</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if p.categoria %}
+                                        <span class="badge bg-secondary px-3 py-2">{{ p.categoria.nombre }}</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark border px-3 py-2">Sin categoría</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if p.proveedor %}
+                                        <i class="bi bi-truck me-1 text-muted"></i>
+                                        {{ p.proveedor.nombre_empresa }}
+                                    {% else %}
+                                        <span class="text-muted small">Sin proveedor</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <span class="fw-bold text-success">Bs. {{ p.precio_venta }}</span>
+                                </td>
+
+                                <td class="text-center">
+                                    {% if p.stock_actual == 0 %}
+                                        <span class="badge bg-danger px-3 py-2">
+                                            <i class="bi bi-x-circle me-1"></i>
+                                            Agotado
+                                        </span>
+                                    {% elif p.stock_actual <= p.stock_minimo %}
+                                        <span class="badge bg-warning text-dark px-3 py-2">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>
+                                            {{ p.stock_actual }} unidades
+                                        </span>
+                                        <small class="d-block text-muted mt-1">Stock bajo</small>
+                                    {% else %}
+                                        <span class="badge bg-success px-3 py-2">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            {{ p.stock_actual }} unidades
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="bi bi-grid-3x3-gap fs-1 d-block mb-2"></i>
+                                    No hay productos activos registrados en el catálogo.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-light border mt-4 mb-0">
+                <div class="d-flex gap-2">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <div>
+                        Este catálogo muestra únicamente productos activos disponibles para consulta dentro del sistema.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buscador = document.getElementById("buscadorTabla");
+    const filas = document.querySelectorAll("#tablaCatalogo tbody tr");
+
+    if (buscador) {
+        buscador.addEventListener("input", function () {
+            const texto = this.value.toLowerCase().trim();
+
+            filas.forEach(function (fila) {
+                const contenido = fila.innerText.toLowerCase();
+                fila.style.display = contenido.includes(texto) ? "" : "none";
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

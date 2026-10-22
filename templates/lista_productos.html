@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2 py-3 rounded-top-4">
+            <div>
+                <h4 class="mb-0">
+                    <i class="bi bi-box-seam-fill me-2"></i>
+                    Lista de Productos
+                </h4>
+                <small class="text-white-50">Gestión de productos, precios, stock y estado</small>
+            </div>
+
+            {% if 'add_producto' in perms_ferreteria or request.user.is_superuser %}
+                <a href="{% url 'nuevo_producto' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Nuevo Producto
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="card-body p-4">
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="input-group shadow-sm">
+                        <span class="input-group-text bg-white text-muted border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="buscadorTabla" class="form-control border-start-0" placeholder="Buscar producto, código, marca o estado...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tablaProductos">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 90px;">ID</th>
+                            <th>Producto</th>
+                            <th>Marca</th>
+                            <th>Compra</th>
+                            <th>Venta</th>
+                            <th>Stock</th>
+                            <th>Estado</th>
+                            <th class="text-center" style="width: 140px;">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for producto in productos %}
+                            <tr class="{% if not producto.activo %}table-secondary text-muted{% endif %}">
+                                <td>
+                                    <span class="badge bg-light text-dark border">#{{ producto.id }}</span>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                            <i class="bi bi-box-seam"></i>
+                                        </div>
+
+                                        <div>
+                                            <div class="fw-bold">{{ producto.nombre }}</div>
+                                            <small class="text-muted">{{ producto.codigo }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if producto.marca %}
+                                        <span class="badge bg-secondary px-3 py-2">{{ producto.marca.nombre }}</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark border px-3 py-2">Sin marca</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <span class="fw-semibold">Bs. {{ producto.precio_compra }}</span>
+                                </td>
+
+                                <td>
+                                    <span class="fw-semibold text-success">Bs. {{ producto.precio_venta }}</span>
+                                </td>
+
+                                <td>
+                                    {% if producto.stock_actual <= producto.stock_minimo and producto.activo %}
+                                        <span class="text-danger fw-bold">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                            {{ producto.stock_actual }} unidades
+                                        </span>
+                                        <small class="d-block text-muted">Stock bajo</small>
+                                    {% else %}
+                                        <span class="text-success fw-bold">{{ producto.stock_actual }} unidades</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if producto.activo %}
+                                        <span class="badge bg-success px-3 py-2">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger px-3 py-2">Inactivo</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        {% if 'change_producto' in perms_ferreteria or request.user.is_superuser %}
+                                            <a href="{% url 'editar_producto' producto.id %}" class="btn btn-sm btn-outline-primary" title="Editar producto">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                        {% endif %}
+
+                                        {% if 'delete_producto' in perms_ferreteria or request.user.is_superuser %}
+                                            <form method="POST" action="{% url 'estado_producto' producto.id %}" class="d-inline form-estado-producto" data-nombre="{{ producto.nombre }}" data-activo="{% if producto.activo %}1{% else %}0{% endif %}">
+                                                {% csrf_token %}
+                                                <button type="button" class="btn btn-sm {% if producto.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %} btn-abrir-estado" title="{% if producto.activo %}Dar de baja{% else %}Reactivar{% endif %}">
+                                                    <i class="bi {% if producto.activo %}bi-trash3-fill{% else %}bi-check-circle-fill{% endif %}"></i>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i class="bi bi-trash3-fill"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-5">
+                                    <i class="bi bi-box-seam fs-1 d-block mb-2"></i>
+                                    No hay productos registrados en el inventario.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEstadoProducto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header text-white rounded-top-4" id="modalEstadoHeader">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmar acción
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-2" id="textoEstadoProducto"></p>
+
+                <div class="alert alert-light border mb-2">
+                    <strong id="nombreEstadoProducto"></strong>
+                </div>
+
+                <small class="text-muted" id="ayudaEstadoProducto"></small>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <button type="button" class="btn" id="btnConfirmarEstadoProducto">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buscador = document.getElementById("buscadorTabla");
+    const filas = document.querySelectorAll("#tablaProductos tbody tr");
+    const botonesEstado = document.querySelectorAll(".btn-abrir-estado");
+
+    const modalElemento = document.getElementById("modalEstadoProducto");
+    const modalHeader = document.getElementById("modalEstadoHeader");
+    const textoEstado = document.getElementById("textoEstadoProducto");
+    const nombreEstado = document.getElementById("nombreEstadoProducto");
+    const ayudaEstado = document.getElementById("ayudaEstadoProducto");
+    const btnConfirmar = document.getElementById("btnConfirmarEstadoProducto");
+
+    let formularioSeleccionado = null;
+
+    if (buscador) {
+        buscador.addEventListener("input", function () {
+            const texto = this.value.toLowerCase().trim();
+
+            filas.forEach(function (fila) {
+                const contenido = fila.innerText.toLowerCase();
+                fila.style.display = contenido.includes(texto) ? "" : "none";
+            });
+        });
+    }
+
+    botonesEstado.forEach(function (boton) {
+        boton.addEventListener("click", function () {
+            formularioSeleccionado = this.closest("form");
+
+            const nombre = formularioSeleccionado.dataset.nombre || "este producto";
+            const activo = formularioSeleccionado.dataset.activo === "1";
+
+            nombreEstado.textContent = nombre;
+
+            modalHeader.classList.remove("bg-danger", "bg-success");
+            btnConfirmar.classList.remove("btn-danger", "btn-success");
+
+            if (activo) {
+                modalHeader.classList.add("bg-danger");
+                btnConfirmar.classList.add("btn-danger");
+                btnConfirmar.innerHTML = '<i class="bi bi-trash3-fill me-1"></i> Dar de baja';
+                textoEstado.textContent = "¿Seguro que deseas dar de baja este producto?";
+                ayudaEstado.textContent = "El producto no se eliminará de la base de datos, solo quedará inactivo.";
+            } else {
+                modalHeader.classList.add("bg-success");
+                btnConfirmar.classList.add("btn-success");
+                btnConfirmar.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Reactivar';
+                textoEstado.textContent = "¿Seguro que deseas reactivar este producto?";
+                ayudaEstado.textContent = "El producto volverá a estar disponible dentro del sistema.";
+            }
+
+            const modal = new bootstrap.Modal(modalElemento);
+            modal.show();
+        });
+    });
+
+    btnConfirmar.addEventListener("click", function () {
+        if (formularioSeleccionado) {
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Procesando...';
+            formularioSeleccionado.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

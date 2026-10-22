@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block contenido %}
+<div class="container-fluid px-0">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="bi bi-receipt text-primary me-2"></i>
+                        Detalle de Venta #{{ venta.id }}
+                    </h2>
+                    <small class="text-muted">Información completa de la venta registrada</small>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <a href="{% url 'historial_ventas' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver
+                    </a>
+
+                    {% if 'view_venta' in perms_ferreteria or request.user.is_superuser %}
+                        <a href="{% url 'generar_recibo_pdf' venta.id %}" target="_blank" class="btn btn-danger">
+                            <i class="bi bi-file-earmark-pdf-fill me-1"></i>
+                            PDF
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-dark text-white py-3 rounded-top-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <h4 class="mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Información General
+                            </h4>
+                            <small class="text-white-50">Folio interno de venta #{{ venta.id }}</small>
+                        </div>
+
+                        <span class="badge bg-success fs-6 px-3 py-2">
+                            {{ venta.fecha|date:"d/m/Y H:i" }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="row g-4 mb-4">
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded-4 p-3 h-100">
+                                <h6 class="text-muted fw-bold mb-3">
+                                    <i class="bi bi-person-fill me-1"></i>
+                                    DATOS DEL CLIENTE
+                                </h6>
+
+                                <p class="mb-1">
+                                    <strong>{{ venta.cliente.nombre }}</strong>
+                                </p>
+
+                                <p class="mb-1">
+                                    <span class="text-muted">NIT/CI:</span>
+                                    {{ venta.cliente.documento_identidad }}
+                                </p>
+
+                                <p class="mb-1">
+                                    <span class="text-muted">Teléfono:</span>
+                                    {{ venta.cliente.telefono|default:"No registrado" }}
+                                </p>
+
+                                <p class="mb-0">
+                                    <span class="text-muted">Dirección:</span>
+                                    {{ venta.cliente.direccion|default:"No registrada" }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded-4 p-3 h-100">
+                                <h6 class="text-muted fw-bold mb-3">
+                                    <i class="bi bi-person-badge me-1"></i>
+                                    DATOS DE OPERACIÓN
+                                </h6>
+
+                                <p class="mb-1">
+                                    <span class="text-muted">Cajero:</span>
+                                    {% if venta.usuario %}
+                                        <strong>{{ venta.usuario.nombre }}</strong>
+                                    {% else %}
+                                        <span class="text-muted">No registrado</span>
+                                    {% endif %}
+                                </p>
+
+                                <p class="mb-1">
+                                    <span class="text-muted">Correo:</span>
+                                    {% if venta.usuario %}
+                                        {{ venta.usuario.correo }}
+                                    {% else %}
+                                        No registrado
+                                    {% endif %}
+                                </p>
+
+                                <p class="mb-1">
+                                    <span class="text-muted">Método de pago:</span>
+                                    <strong>{{ pago.tipo_pago.nombre|default:"No registrado" }}</strong>
+                                </p>
+
+                                <p class="mb-0">
+                                    <span class="text-muted">Descuento:</span>
+                                    {% if venta.descuento %}
+                                        {{ venta.descuento.nombre }} - {{ venta.descuento.porcentaje|floatformat:2 }}%
+                                    {% else %}
+                                        Sin descuento
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="text-muted fw-bold mb-3">
+                        <i class="bi bi-bag-check me-1"></i>
+                        PRODUCTOS COMPRADOS
+                    </h6>
+
+                    <div class="table-responsive mb-4 border rounded-4">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio Unit.</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for item in detalles %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">{{ item.producto.nombre }}</div>
+                                            <small class="text-muted">
+                                                {{ item.producto.marca.nombre|default:"Genérico" }}
+                                            </small>
+                                        </td>
+
+                                        <td class="text-center">
+                                            <span class="badge bg-primary px-3 py-2">
+                                                {{ item.cantidad }}
+                                            </span>
+                                        </td>
+
+                                        <td class="text-end">
+                                            Bs. {{ item.precio_unitario }}
+                                        </td>
+
+                                        <td class="text-end fw-bold">
+                                            Bs. {{ item.subtotal }}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">
+                                            No hay productos registrados en esta venta.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row justify-content-end">
+                        <div class="col-12 col-md-6 col-lg-5">
+                            <div class="card border-0 bg-light rounded-4">
+                                <div class="card-body">
+                                    <table class="table table-sm table-borderless text-end mb-0">
+                                        <tr>
+                                            <td class="text-muted">Subtotal bruto:</td>
+                                            <td class="fw-semibold">Bs. {{ subtotal_bruto }}</td>
+                                        </tr>
+
+                                        {% if venta.descuento %}
+                                            <tr>
+                                                <td class="text-danger">
+                                                    Descuento aplicado:
+                                                </td>
+                                                <td class="text-danger fw-bold">
+                                                    {{ venta.descuento.porcentaje|floatformat:2 }}%
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td class="text-muted">
+                                                    Promoción:
+                                                </td>
+                                                <td class="fw-semibold">
+                                                    {{ venta.descuento.nombre }}
+                                                </td>
+                                            </tr>
+                                        {% else %}
+                                            <tr>
+                                                <td class="text-muted">Descuento aplicado:</td>
+                                                <td class="fw-semibold">Sin descuento</td>
+                                            </tr>
+                                        {% endif %}
+
+                                        <tr class="border-top">
+                                            <td class="fs-5 fw-bold text-dark pt-3">
+                                                TOTAL COBRADO:
+                                            </td>
+                                            <td class="fs-5 fw-bold text-success pt-3">
+                                                Bs. {{ venta.total }}
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border mt-4 mb-0">
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-info-circle text-primary"></i>
+                            <div>
+                                Esta venta ya fue registrada en el sistema. El stock fue descontado al momento de confirmar el cobro.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center text-muted small mt-3">
+                Venta registrada el {{ venta.fecha|date:"d/m/Y" }} a las {{ venta.fecha|date:"H:i" }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
